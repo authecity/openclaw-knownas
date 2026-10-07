@@ -38,8 +38,11 @@ Licensed under [Apache-2.0](LICENSE).
 
    ```bash
    openclaw secrets store set KNOWNAS_API_KEY --kind secret
-   openclaw config set skills.entries.knownas.apiKey --ref-provider default --ref-source env --ref-id KNOWNAS_API_KEY
+   openclaw config set skills.entries.knownas.apiKey --ref-provider default --ref-source store --ref-id KNOWNAS_API_KEY
+   openclaw secrets reload
    ```
+
+   The first command asks for the key at a prompt that does not echo it.
 
 4. **A public HTTPS origin** for the gateway: a tunnel (cloudflared, ngrok),
    Tailscale Funnel, or a reverse proxy. knownAs refuses loopback, private
@@ -51,6 +54,10 @@ Licensed under [Apache-2.0](LICENSE).
 openclaw plugins install clawhub:@authecity/openclaw-knownas
 openclaw skills install @authecity/knownas
 ```
+
+OpenClaw asks you to accept the plugin's capabilities on install: it adds
+one unauthenticated HTTP route, `/.well-known/knownas-origin`, and nothing
+else.
 
 Then, in a chat with your agent: `/knownas setup myclaw`. It asks before it
 creates anything, and before it changes anything public.

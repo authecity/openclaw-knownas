@@ -50,12 +50,15 @@ call() {
     printf 'header = "Accept: application/json"\n'
     if [ -n "$body" ]; then
       printf 'header = "Content-Type: application/json"\n'
-      printf 'data-binary = "@%s"\n' "$body"
     fi
     if [ -n "${IDEMPOTENCY_KEY:-}" ]; then
       printf 'header = "Idempotency-Key: %s"\n' "$IDEMPOTENCY_KEY"
     fi
-  } | curl -sS --config - -X "$method" -o "$TMP/body" -w '%{http_code}' "$API$path"
+  } | if [ -n "$body" ]; then
+    curl -sS --config - -X "$method" -o "$TMP/body" -w '%{http_code}' --data-binary "@$body" "$API$path"
+  else
+    curl -sS --config - -X "$method" -o "$TMP/body" -w '%{http_code}' "$API$path"
+  fi
 }
 
 # The API's own error, without the request id noise.
@@ -127,7 +130,7 @@ cmd_find() {
   cursor=""
   while :; do
     status=$(call GET "/v1/identities?limit=100${cursor:+&cursor=$cursor}"); ok_or_die "$status"
-    id=$(jq -r --arg s "$1" '.items[] | select(.slug == $s and .status != "deleted") | .id' "$TMP/body" | head -n 1)
+    id=$(jq -r --arg s "$1" '.items[] | select(.slug == $s and (.status | IN("deleted", "deleting", "archived") | not)) | .id' "$TMP/body" | head -n 1)
     [ -n "$id" ] && { printf '%s\n' "$id"; return 0; }
     cursor=$(jq -r '.next_cursor // empty' "$TMP/body")
     [ -n "$cursor" ] || die "no identity named $1 on this account" 5
@@ -141,6 +144,8 @@ cmd_wait_active() {
   while [ $i -lt 24 ]; do
     status=$(call GET "/v1/identities/$1"); ok_or_die "$status"
     state=$(jq -r .status "$TMP/body")
+    problem=$(jq -r '.provisioning_error // empty' "$TMP/body")
+    [ -z "$problem" ] || die "provisioning failed: $problem" 5
     case "$state" in
       active) printf 'active\n'; return 0 ;;
       failed | suspended | archived | deleting | deleted) die "the identity is $state" 5 ;;
@@ -167,13 +172,16 @@ cmd_check() {
   status=$(call POST "/v1/identities/$1/routes/$2/check")
   [ "$status" = 429 ] && die "checked less than a minute ago; wait a minute and check again" 5
   ok_or_die "$status"
+  jq '{passed, outcome, http_status, status: .route.status}' "$TMP/body" > "$TMP/summary"
   stored=false
   if [ "$(jq -r '.origin_secret // empty | length > 0' "$TMP/body")" = true ]; then
     name="KNOWNAS_ORIGIN_SECRET_$(printf '%s' "$2" | tr 'a-z' 'A-Z')"
     jq -j '.origin_secret' "$TMP/body" | $STORE_CMD "$name" --kind secret >/dev/null
     stored=true
   fi
-  jq --argjson stored "$stored" '{passed, outcome, http_status, status: .route.status, secret_stored: $stored}' "$TMP/body"
+  # The secret leaves the disk as soon as it is in the store.
+  : > "$TMP/body"
+  jq --argjson stored "$stored" '. + {secret_stored: $stored}' "$TMP/summary"
 }
 
 # status ID -> identity, routes and traffic, as one JSON document

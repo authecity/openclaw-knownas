@@ -1,7 +1,7 @@
 // The skill's helper script against a fake knownAs API on localhost.
 // Needs sh, curl and jq; skipped (not failed) where jq is missing.
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -81,10 +81,17 @@ before(async () => {
 
 after(() => server?.close());
 
-function run(args: string[], env: Record<string, string> = {}) {
-  const result = spawnSync("sh", [SCRIPT, ...args], {
-    encoding: "utf8",
-    env: { ...process.env, KNOWNAS_API_URL: base, KNOWNAS_API_KEY: KEY, KNOWNAS_SECRET_STORE_CMD: `node ${storeScript}`, ...env },
+// Async: the fake API lives in this process, so a blocking spawn would starve it.
+async function run(args: string[], env: Record<string, string> = {}) {
+  const result = await new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve) => {
+    const child = spawn("sh", [SCRIPT, ...args], {
+      env: { ...process.env, KNOWNAS_API_URL: base, KNOWNAS_API_KEY: KEY, KNOWNAS_SECRET_STORE_CMD: `node ${storeScript}`, ...env },
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (c) => (stdout += c));
+    child.stderr.on("data", (c) => (stderr += c));
+    child.on("close", (status) => resolve({ status, stdout, stderr }));
   });
   // Nothing the script prints may carry the key or the secret.
   for (const out of [result.stdout, result.stderr]) {
@@ -96,27 +103,27 @@ function run(args: string[], env: Record<string, string> = {}) {
 
 const t = hasJq ? test : test.skip;
 
-t("whoami sends the key as a bearer header and prints the scopes", () => {
-  const r = run(["whoami"]);
+t("whoami sends the key as a bearer header and prints the scopes", async () => {
+  const r = await run(["whoami"]);
   assert.equal(r.code, 0, r.err);
   assert.deepEqual(r.json().scopes, ["identity:create"]);
 });
 
-t("refuses to run without a key", () => {
-  const r = run(["whoami"], { KNOWNAS_API_KEY: "" });
+t("refuses to run without a key", async () => {
+  const r = await run(["whoami"], { KNOWNAS_API_KEY: "" });
   assert.equal(r.code, 2);
   assert.match(r.err, /KNOWNAS_API_KEY/);
 });
 
-t("refuses a plain-http API that is not localhost", () => {
-  const r = run(["whoami"], { KNOWNAS_API_URL: "http://platform.knownas.dev" });
+t("refuses a plain-http API that is not localhost", async () => {
+  const r = await run(["whoami"], { KNOWNAS_API_URL: "http://platform.knownas.dev" });
   assert.equal(r.code, 2);
 });
 
-t("create sends api and webhooks, the record, and an idempotency key derived from the request", () => {
+t("create sends api and webhooks, the record, and an idempotency key derived from the request", async () => {
   const record = join(work, "record.json");
   writeFileSync(record, JSON.stringify({ display_name: "My Claw", description: "A personal agent." }));
-  const r = run(["create", "myclaw", "My Claw", record]);
+  const r = await run(["create", "myclaw", "My Claw", record]);
   assert.equal(r.code, 0, r.err);
   assert.equal(r.json().fqdn, "myclaw.knownas.dev");
   const call = seen.filter((s) => s.method === "POST" && s.url === "/v1/identities").at(-1)!;
@@ -124,68 +131,68 @@ t("create sends api and webhooks, the record, and an idempotency key derived fro
   assert.deepEqual(sent.services, ["api", "webhooks"]);
   assert.equal(sent.manifest.display_name, "My Claw");
   assert.match(String(call.headers["idempotency-key"]), /^[0-9a-f]{32}$/);
-  run(["create", "myclaw", "My Claw", record]);
+  await run(["create", "myclaw", "My Claw", record]);
   const again = seen.filter((s) => s.method === "POST" && s.url === "/v1/identities").at(-1)!;
   assert.equal(again.headers["idempotency-key"], call.headers["idempotency-key"], "a retry replays");
 });
 
-t("a taken name is exit 3 with the API's message", () => {
-  const r = run(["create", "taken", "Taken"]);
+t("a taken name is exit 3 with the API's message", async () => {
+  const r = await run(["create", "taken", "Taken"]);
   assert.equal(r.code, 3);
   assert.match(r.err, /IDENTITY_SLUG_UNAVAILABLE/);
 });
 
-t("a refused name is exit 4 with the reason", () => {
-  const r = run(["create", "paypa1", "Paypal"]);
+t("a refused name is exit 4 with the reason", async () => {
+  const r = await run(["create", "paypa1", "Paypal"]);
   assert.equal(r.code, 4);
   assert.match(r.err, /protected name/);
 });
 
-t("unknown services are refused before any call", () => {
+t("unknown services are refused before any call", async () => {
   const before = seen.length;
-  assert.equal(run(["create", "myclaw", "My Claw", "hooks"]).code, 2);
+  assert.equal((await run(["create", "myclaw", "My Claw", "hooks"])).code, 2);
   assert.equal(seen.length, before);
 });
 
-t("find returns the id for a slug", () => {
-  const r = run(["find", "myclaw"]);
+t("find returns the id for a slug", async () => {
+  const r = await run(["find", "myclaw"]);
   assert.equal(r.code, 0, r.err);
   assert.equal(r.out.trim(), ID);
 });
 
-t("route sends the origin and prints the token", () => {
-  const r = run(["route", ID, "api", "example-tunnel.trycloudflare.com"]);
+t("route sends the origin and prints the token", async () => {
+  const r = await run(["route", ID, "api", "example-tunnel.trycloudflare.com"]);
   assert.equal(r.code, 0, r.err);
   assert.equal(r.json().token, TOKEN);
   const call = seen.at(-1)!;
   assert.deepEqual(JSON.parse(call.body), { origin: "example-tunnel.trycloudflare.com" });
 });
 
-t("origins the platform refuses are refused locally, with no call", () => {
+t("origins the platform refuses are refused locally, with no call", async () => {
   for (const origin of ["127.0.0.1", "localhost", "my.local", "https://x.example.org", "x.example.org:8443", "x.example.org/path", "a.knownas.dev", "intranet"]) {
     const before = seen.length;
-    assert.equal(run(["route", ID, "api", origin]).code, 6, origin);
+    assert.equal((await run(["route", ID, "api", origin])).code, 6, origin);
     assert.equal(seen.length, before, origin);
   }
-  assert.equal(run(["origin-ok", "abc.trycloudflare.com"]).code, 0);
+  assert.equal((await run(["origin-ok", "abc.trycloudflare.com"])).code, 0);
 });
 
-t("the first passing check stores the secret without printing it; a later one stores nothing", () => {
-  const r = run(["check", ID, "api"]);
+t("the first passing check stores the secret without printing it; a later one stores nothing", async () => {
+  const r = await run(["check", ID, "api"]);
   assert.equal(r.code, 0, r.err);
   assert.deepEqual(r.json(), { passed: true, outcome: "ok", http_status: 200, status: "verified", secret_stored: true });
   const store = readFileSync(storeFile, "utf8");
   assert.equal(store, `KNOWNAS_ORIGIN_SECRET_API --kind secret=${SECRET}\n`);
-  const tooSoon = run(["check", ID, "api"]);
+  const tooSoon = await run(["check", ID, "api"]);
   assert.equal(tooSoon.code, 5);
   assert.match(tooSoon.err, /wait a minute/);
-  const later = run(["check", ID, "api"]);
+  const later = await run(["check", ID, "api"]);
   assert.equal(later.json().secret_stored, false);
   assert.equal(readFileSync(storeFile, "utf8"), store, "nothing new stored");
 });
 
-t("status joins identity, live routes and traffic", () => {
-  const r = run(["status", ID]);
+t("status joins identity, live routes and traffic", async () => {
+  const r = await run(["status", ID]);
   assert.equal(r.code, 0, r.err);
   const s = r.json();
   assert.equal(s.fqdn, "myclaw.knownas.dev");
@@ -194,8 +201,8 @@ t("status joins identity, live routes and traffic", () => {
   assert.equal(s.traffic.limits.suspend_bytes_30d, 2);
 });
 
-t("remove-route deletes the route", () => {
-  const r = run(["remove-route", ID, "api"]);
+t("remove-route deletes the route", async () => {
+  const r = await run(["remove-route", ID, "api"]);
   assert.equal(r.code, 0, r.err);
   assert.equal(r.json().status, "removed");
   assert.equal(seen.at(-1)!.method, "DELETE");

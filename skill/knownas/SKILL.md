@@ -99,10 +99,10 @@ default).
 3. `wait-active <id>`.
 4. For each service: `route <id> <service> <origin>`. Collect the tokens.
 5. Serve the tokens. With the plugin:
-   `openclaw config set plugins.entries.knownas.config.originTokens '["<api token>","<webhooks token>"]' --strict-json`,
-   then `openclaw gateway restart --safe`. Then check it yourself:
-   `curl -sS https://<origin>/.well-known/knownas-origin` must show each
-   token on its own line. Without the plugin, tell the owner the exact path
+   `openclaw config set plugins.entries.knownas.config.originTokens '["<api token>","<webhooks token>"]' --strict-json`.
+   The gateway applies it without a restart, within seconds. Then check it
+   yourself: `curl -sS https://<origin>/.well-known/knownas-origin` must
+   show each token on its own line. Without the plugin, tell the owner the exact path
    and that it must return those lines as plain text, with no redirect.
 6. For each service: `check <id> <service>`. On `passed: true` the secret is
    stored (`secret_stored: true`). Otherwise explain the one cause and stop:
