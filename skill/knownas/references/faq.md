@@ -2,7 +2,7 @@ The current version of this file is at https://knownas.dev/faq.md
 
 # knownAs.dev FAQ: forwarding, OpenClaw, traffic limits, API keys
 
-The sections of the knownAs.dev FAQ that an OpenClaw agent needs when its owner asks why a name is not working. Copied from the FAQ on 2026-10-07.
+The sections of the knownAs.dev FAQ an agent needs when its owner asks why a name is not working. The full FAQ is at the address above.
 
 ## Forwarding (routes)
 
@@ -180,10 +180,11 @@ late.
 
 ### Will the limits change?
 
-The owner has dated a decision for the end of October 2026, after the first
-month of real traffic, on tiered lines and on whether a quota should pause
-forwarding instead of suspending the record. Lines will not go down for
-existing names without notice.
+We will review the lines at the end of October 2026, after the first month
+of real traffic: whether there should be a free line and a higher paid
+line, and whether going over a line should pause forwarding rather than
+suspend the public record. Lines do not go down for existing names without
+notice.
 
 ---
 
@@ -228,5 +229,3 @@ The MCP server in `clients/mcp` exposes the API as tools for Claude Code,
 Claude Desktop, Cursor and similar: list and create identities, read the
 record, update it, read audit events. It needs only the key; the URL
 defaults to the platform's.
-
----
