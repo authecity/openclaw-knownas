@@ -20,7 +20,7 @@ re-points the name and nothing else changes.
 
 | Path | What |
 |---|---|
-| [`skill/knownas/`](skill/knownas/) | The `knownas` skill: `/knownas setup`, `repoint`, `channels`, `status`, `remove` |
+| [`skill/knownas/`](skill/knownas/) | The `knownas` skill: `/knownas setup`, `repoint`, `channels`, `status`, `remove`, and the FAQ it answers from |
 | [`plugin/`](plugin/) | The `knownas` plugin: serves the proof token at `/.well-known/knownas-origin` |
 | [`tests/`](tests/) | The plugin's route and the skill's helper, tested without a gateway |
 
@@ -28,9 +28,11 @@ Licensed under [Apache-2.0](LICENSE).
 
 ## Before you start
 
-1. **A person gets the account.** knownAs is in a private beta: join the
-   waitlist at [knownas.dev](https://knownas.dev), accept the invitation,
-   sign in. The skill never signs anyone up.
+1. **A person gets the account.** Ask for an invitation at
+   [knownas.dev/openclaw](https://knownas.dev/openclaw): tick the box to say
+   you are eligible, and the invitation arrives by email, usually within a
+   minute. Follow it, accept the terms, sign in. The beta is free; the skill
+   never signs anyone up.
 2. **Mint a narrow key** in the console, under API keys: `identity:create`,
    `identity:read`, `manifest:write` and `route:write`, with an expiry.
 3. **Give it to the skill, not to the chat.** Store it in OpenClaw's secret

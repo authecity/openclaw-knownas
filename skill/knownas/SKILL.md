@@ -146,6 +146,10 @@ with the name typed out; this skill never does it.
 
 ## When something is wrong
 
+When the owner asks why something is not working, read
+`{baseDir}/references/faq.md` first and answer from it; if it does not cover
+the question, say so and give ops@knownas.dev.
+
 - A route is `paused`: the daily check missed three times. Fix the origin,
   then `check` again; a pass resumes it.
 - The identity is `suspended` with reason `bandwidth_quota`: the owner can
