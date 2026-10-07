@@ -1,0 +1,30 @@
+{
+  "id": "knownas",
+  "categories": ["infrastructure"],
+  "name": "knownAs.dev",
+  "description": "Serves the knownAs.dev origin proof token, so this gateway can have a stable public name that survives tunnel restarts.",
+  "activation": {
+    "onStartup": true
+  },
+  "uiHints": {
+    "originTokens": {
+      "label": "Origin proof tokens",
+      "help": "The tokens knownAs.dev issued when a route was pointed at this gateway, one per route. Served at /.well-known/knownas-origin. The knownas skill sets these; they are not secrets."
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "originTokens": {
+        "type": "array",
+        "maxItems": 6,
+        "uniqueItems": true,
+        "items": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        }
+      }
+    }
+  }
+}
