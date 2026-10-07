@@ -151,8 +151,16 @@ with the name typed out; this skill never does it.
 - The identity is `suspended` with reason `bandwidth_quota`: the owner can
   resume it once per 30 days from the console; the mail they received says
   what happens after that.
-- `403` of any kind, including `QUOTA_RESUME_OPERATOR_ONLY`: stop; it is a
-  person's call.
+- `403` of any kind from the knownAs API, including
+  `QUOTA_RESUME_OPERATOR_ONLY`: stop; it is a person's call.
+- A request through `<name>.api.knownas.dev` gets `403` with
+  `"type":"proxy_attribution_required"` from the **gateway**: OpenClaw
+  refuses forwarded traffic on its own token-protected routes until
+  `gateway.trustedProxies` names the proxy in front of it (the tunnel). The
+  same request straight to the tunnel gets the same answer, so it is not
+  knownAs. Channel webhooks and the proof route are not affected. Point the
+  owner to OpenClaw's "Reverse proxy configuration" guide; do not change
+  `gateway.trustedProxies` yourself.
 - The secret: the platform's edge sends it to the gateway as
   `x-knownas-origin-secret`. OpenClaw cannot check it for other plugins'
   routes; an operator who fronts the gateway with a reverse proxy can (see

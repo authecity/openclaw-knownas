@@ -11,3 +11,7 @@
   none is configured. No outbound calls.
 - No origin-secret check in the plugin: OpenClaw's plugin SDK cannot guard
   another plugin's routes (see the README).
+- Tested end to end on knownAs dev with OpenClaw 2026.9.8 (2026-10-07).
+  Token changes hot-reload; the API key comes from OpenClaw's secret store
+  through a `store` SecretRef; gateway-authenticated routes behind a tunnel
+  need `gateway.trustedProxies` (README).

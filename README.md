@@ -81,6 +81,28 @@ creates anything, and before it changes anything public.
 Forwarding is metered. Each agent has a traffic allowance, shown in the
 console; above it, the agent is suspended until you resume it.
 
+## Behind a tunnel: `proxy_attribution_required`
+
+OpenClaw refuses forwarded traffic on its token-protected routes (its
+OpenAI-compatible API, the Control UI) until it knows which proxy to trust.
+Through a tunnel, with or without knownAs, those routes answer:
+
+```json
+{"error":{"message":"Proxy client attribution is required. ...","type":"proxy_attribution_required"}}
+```
+
+Channel webhooks and this plugin's route are plugin-authenticated and are
+not affected. To use the gateway's own API through
+`<name>.api.knownas.dev`, set `gateway.trustedProxies` to the address your
+tunnel connects from (for a tunnel on the same machine, `127.0.0.1`), and
+first read OpenClaw's "Reverse proxy configuration" guide: it requires the
+proxy to overwrite `X-Forwarded-For`, not append to it, and whether yours
+does decides whether trusting it is safe.
+
+```bash
+openclaw config set gateway.trustedProxies '["127.0.0.1"]' --strict-json
+```
+
 ## The origin secret, and why the plugin does not check it
 
 knownAs's edge sends the secret on every forwarded request as
@@ -131,6 +153,10 @@ The tests need `sh`, `curl` and `jq`; the helper's tests skip without `jq`.
 
 ## Status
 
-Version 0.1, built against OpenClaw 2026.9.8. The plugin SDK is marked
-experimental upstream; each OpenClaw release this declares compatible is
-tested first.
+Version 0.1, built against OpenClaw 2026.9.8 and tested end to end against
+knownAs's development environment on 2026-10-07: identity created, both
+routes verified through this plugin, secrets stored, webhook paths
+forwarded unchanged, and a tunnel restart recovered with `/knownas repoint`
+(the old name answered 530 until the repoint; the same name reached the new
+tunnel about 35 seconds after it). The plugin SDK is marked experimental
+upstream; each OpenClaw release this declares compatible is tested first.
