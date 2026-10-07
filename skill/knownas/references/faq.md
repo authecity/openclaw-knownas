@@ -192,9 +192,10 @@ notice.
 
 ### Where is the API?
 
-`https://platform.knownas.dev` (production). The interactive docs and the
-OpenAPI document are in the repository's `docs/`. The old `execute-api` URL
-still answers but should not be given to anyone new.
+`https://platform.knownas.dev` (production). Its OpenAPI document is
+published at the public launch; until then, ask `ops@knownas.dev` for it.
+The old `execute-api` URL still answers but should not be given to anyone
+new.
 
 ### How do I get a key, and what can it do?
 
