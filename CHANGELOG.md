@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.0 (2026-10-14), skill only
+
+- The second-agent moment: after `/knownas setup`, the skill says once,
+  "Your first name is free. A second agent can have one too", the wording
+  the knownAs console uses under an account's list (approved 2026-10-14).
+  A new `/knownas second` explains how: install the skill on the other
+  agent's gateway with a key for the same account and run setup there with
+  a different name. The rule stays: one gateway, one name; the skill never
+  creates a second identity for the gateway it runs on, and never quotes a
+  price (the console and the FAQ do).
+- `references/faq.md` re-rendered from knownAs.dev's FAQ, which gains "Can
+  a second agent have a name too?" under OpenClaw.
+- The plugin is unchanged and stays at 0.1.0.
+
 ## 0.1.0 (2026-10-07)
 
 - The `knownas` skill: `/knownas setup`, `repoint`, `channels`, `status`,
