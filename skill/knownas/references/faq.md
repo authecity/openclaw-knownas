@@ -48,7 +48,10 @@ minute, check again.
 **Yes.** Every verified route is re-checked daily. One miss moves the next
 check a day on; three misses in a row **pause** the route (traffic stops;
 the name still resolves). Fix the origin and run a check: a pass resumes it.
-Pressing "check" repeatedly does not count against you.
+Pressing "check" repeatedly does not count against you. The one exception:
+if your origin's name starts resolving to a private or reserved address
+(`forbidden_address`), the route pauses at once, because that is never a
+passing outage.
 
 ### What is the origin secret, and why was it shown only once?
 
@@ -70,8 +73,8 @@ each route's state.
 Your tunnel got a new host name and the route still points at the old one.
 Set the route again with the new origin (in OpenClaw, `/knownas repoint`),
 serve the new token, and check; the public name is unchanged, so nothing
-that points at it needs editing. On the dev test this took about 35 seconds
-end to end.
+that points at it needs editing. End to end it usually takes under a
+minute.
 
 ### I removed a route, but the name still answers for a while
 
@@ -140,6 +143,18 @@ Caddy example).
 It cannot ask whether a name is free (by design; see "Why was my name
 refused?"), so it suggests two alternatives and tries the one you choose.
 
+### Can a second agent have a name too?
+
+Yes. Your first name is free. A second agent can have one too: during the
+beta your account may hold up to the number the console shows under your
+list (25). Install the skill on that agent's gateway, give it a key for the
+same account (the one you have, or a new one from the console), and say
+`/knownas setup <another-name>` there. The skill never creates a second
+name for the gateway it runs on; one gateway, one name. When billing
+starts, a name beyond your allowance is a paid seat, added on the Account
+page (see "Pricing"); the console says what a second one costs before you
+create it.
+
 ---
 
 ## Traffic limits
@@ -194,15 +209,14 @@ notice.
 
 `https://platform.knownas.dev` (production). Its OpenAPI document is
 published at the public launch; until then, ask `ops@knownas.dev` for it.
-The old `execute-api` URL still answers but should not be given to anyone
-new.
 
 ### How do I get a key, and what can it do?
 
 Mint it in the console under API keys, choosing scopes and an expiry. The
 token is shown **once**. Scopes: `identity:create`, `identity:read`,
 `identity:update`, `identity:suspend`, `identity:delete`, `manifest:write`,
-`route:write`, `audit:read`, `apikey:read`, `apikey:write`, `dns:read`.
+`route:write`, `signing-key:write`, `audit:read`, `apikey:read`,
+`apikey:write`, `dns:read`.
 Give an agent the narrowest set that does its job; a key cannot grant
 scopes it does not have, and no key can change the account, sign in, or
 verify a domain.
@@ -226,7 +240,8 @@ minute per route. Back off and retry after the time in the response.
 
 ### Can I use it from a tool rather than code?
 
-The MCP server in `clients/mcp` exposes the API as tools for Claude Code,
-Claude Desktop, Cursor and similar: list and create identities, read the
-record, update it, read audit events. It needs only the key; the URL
-defaults to the platform's.
+An MCP server that exposes the API as tools for Claude Code, Claude Desktop,
+Cursor and similar (list and create identities, read and update the record,
+read audit events) is built and will be published; until then, the API and
+the OpenClaw skill are the ways in. Ask `ops@knownas.dev` if you want it
+early.

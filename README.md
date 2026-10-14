@@ -20,7 +20,7 @@ re-points the name and nothing else changes.
 
 | Path | What |
 |---|---|
-| [`skill/knownas/`](skill/knownas/) | The `knownas` skill: `/knownas setup`, `repoint`, `channels`, `status`, `remove`, and the FAQ it answers from |
+| [`skill/knownas/`](skill/knownas/) | The `knownas` skill: `/knownas setup`, `second`, `repoint`, `channels`, `status`, `remove`, and the FAQ it answers from |
 | [`plugin/`](plugin/) | The `knownas` plugin: serves the proof token at `/.well-known/knownas-origin` |
 | [`tests/`](tests/) | The plugin's route and the skill's helper, tested without a gateway |
 

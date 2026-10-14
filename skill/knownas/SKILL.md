@@ -31,7 +31,9 @@ for the gateway's API, that keep working when the tunnel behind them changes.
 - Never print `KNOWNAS_API_KEY` or the origin secret. The secret is shown by
   the API once; the helper stores it in OpenClaw's secret store as
   `KNOWNAS_ORIGIN_SECRET_<SERVICE>` without printing it.
-- One identity per gateway. The free tier is one identity; say so.
+- One identity per gateway, never a second for the gateway this skill runs
+  on. The first name is free; a second agent can have one too (see
+  `/knownas second`), and the skill says so once, after setup.
 - Publish in the record only what the owner chooses (name, description,
   contact, homepage). Nothing about the machine, the network or the chat.
 - If the origin is a loopback, private or IP address, stop and explain: the
@@ -115,6 +117,29 @@ default).
    `https://<name>.knownas.dev/.well-known/agent-identity.json`, the gateway
    at `https://<name>.api.knownas.dev`, webhooks at
    `https://<name>.hooks.knownas.dev/<path>`. Offer `/knownas channels`.
+8. Then, in one line and only once: "Your first name is free. A second
+   agent can have one too." If the owner asks how, answer as under
+   `/knownas second`. Never repeat it on later commands.
+
+### /knownas second
+
+For an owner who runs, or will run, another agent. Say what the console
+says, and nothing it does not:
+
+1. Read the account's allowance: `whoami` prints `quota.identities_in_use`
+   and `quota.max_identities`. Say "Your first name is free. A second agent
+   can have one too: this account may hold up to <max_identities> names
+   (<identities_in_use> in use)." Do not quote a price; the console shows
+   the price on the Account page when billing is on, and the FAQ's
+   "Pricing" section has the published numbers.
+2. Say how: install this skill on the other agent's gateway, store a key
+   for the same account there (the owner's existing key, or a new one
+   minted in the console), and run `/knownas setup <another-name>` on that
+   gateway. The name must differ; the record, the routes and the tokens are
+   that gateway's own.
+3. Never create a second identity for this gateway, and never suggest
+   sharing this gateway's name with another agent: one gateway, one name,
+   one record of who answers for it.
 
 ### /knownas repoint <origin>
 
